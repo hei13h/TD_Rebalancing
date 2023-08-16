@@ -39,11 +39,13 @@ class RebalancingSystem:
 
     def rebalance(self, broker: Broker, weights: Weights):
         
-        assert broker is not None
+        assert broker is not None #no broker - no positions etc
         
         current_pos=broker.get_positions()
-        assert (current_pos is not None or weights.wgts is not None)
-
+        #either new portfolio, either liquidating old portfolio
+        assert (current_pos is not None or weights.wgts is not None) 
+        
+        #form a combined position book with current and prospective positions
         if current_pos and not(all(k==0 for k in current_pos.pos.items())): 
             new_portfolio = False
         else:
@@ -57,6 +59,7 @@ class RebalancingSystem:
         for r in reb_universe: 
             combined_positions.setdefault(r,0)
 
+        #if new portfo = use AUM supplied, otherwise recalculate
         if new_portfolio:
             current_aum = broker.aum
         
@@ -71,6 +74,7 @@ class RebalancingSystem:
         print(f'Price: {pos_prices}')
         print(f'AUM: {current_aum}')
 
+        #calculated intended exposure = wgt intended * aum, hence derive intended positions
         intended_positions = {}
         wgts = weights.wgts
         for w in wgts.keys():
@@ -81,7 +85,7 @@ class RebalancingSystem:
         
         print(f'intended pos:{intended_positions}')
 
-
+        #if new portfolio - need buy all positions. otherwise reduce current holding
         if current_pos:
             trades = {}
             for p in intended_positions:
